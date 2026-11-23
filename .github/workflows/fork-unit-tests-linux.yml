@@ -1,0 +1,30 @@
+# Fork-only: upstream's Linux unit-test leg needs a self-hosted runner, so run
+# the same make targets on GitHub-hosted Linux. Not part of the upstream PR.
+name: "Fork Unit Tests (Linux)"
+
+on:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUTF8: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+    - uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    - name: Install dependencies
+      run: make ci-install PYTHON_VERSION=${{ matrix.python-version }}
+    - name: Run unit and component integration tests
+      run: make test-ci PYTHON_VERSION=${{ matrix.python-version }} COV=0
